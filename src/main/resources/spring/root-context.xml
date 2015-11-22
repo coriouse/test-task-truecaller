@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+						http://www.springframework.org/schema/beans/spring-beans.xsd 
+						http://www.springframework.org/schema/jdbc
+						http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd
+						http://www.springframework.org/schema/context 
+ 						http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<context:annotation-config />
+	
+	<context:property-placeholder
+		location="classpath:jdbc-h2.properties,truecaller.properties" />
+		
+
+	
+	<!-- <import resource="job.xml"/> -->
+	<!-- <import resource="db.xml"/> -->
+	
+	
+	
+<!-- 	<bean id="jobRepository"
+		class="org.springframework.batch.core.repository.support.MapJobRepositoryFactoryBean">
+		<property name="transactionManager" ref="transactionManager" />
+	</bean>
+
+	<bean id="transactionManager"
+		class="org.springframework.batch.support.transaction.ResourcelessTransactionManager" />
+
+	<bean id="jobLauncher"
+		class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="jobRepository" ref="jobRepository" />
+	</bean> -->
+	
+	
+	
+	<bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool"
+		destroy-method="dispose">
+		<constructor-arg>
+			<bean class="org.h2.jdbcx.JdbcDataSource">
+				<property name="URL" value="${jdbc.url}" />
+				<property name="user" value="${jdbc.user}" />
+				<property name="password" value="${jdbc.password}" />
+			</bean>
+		</constructor-arg>
+	</bean>
+
+
+
+
+	<jdbc:initialize-database data-source="dataSource">
+		<jdbc:script location="classpath:sql/schema.sql" />
+		<jdbc:script location="classpath:sql/data.sql" />
+	</jdbc:initialize-database>
+
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	<bean id="query" class="java.util.HashMap">
+		<constructor-arg>
+			<map key-type="java.lang.String" value-type="java.lang.String">
+				<entry key="profiles">
+					<value>
+	    	    		    		 <![CDATA[ 			
+	    	    		    		 			select u.id, p.name from t_user u inner join t_profile p on u.id=p.user
+	    	    		    		 ]]>
+					</value>
+				</entry>
+				<entry key="countHistory">
+					<value>
+	    	    		    		 <![CDATA[ 			
+	    	    		    		 			select count(1) from t_history
+	    	    		    		 ]]>
+					</value>
+				</entry>
+
+				<entry key="addVisitToHistory">
+					<value>
+	    	    		    		 <![CDATA[ 			
+	    	    		    		 			insert into t_history(guest, user, visit) values(?,?,?)
+	    	    		    		 ]]>
+					</value>
+				</entry>
+
+			</map>
+		</constructor-arg>
+	</bean>
+
+	<bean id="handlerHistory" class="app.truecaller.services.HandlerHistory"
+		init-method="init" />
+	<bean id="profileDAO" class="app.truecaller.dao.ProfileDAOImpl" />
+	<bean id="historyDAO" class="app.truecaller.dao.HistoryDAOImpl" />
+	<bean id="holderProfile" class="app.truecaller.services.HolderProfile"
+		init-method="init" />
+	<bean id="holderHistory" class="app.truecaller.services.HolderHistory"
+		init-method="init" />
+	<bean id="holderFacade" class="app.truecaller.facade.HolderFacade" />
+	
+
+	<bean
+		class="org.springframework.beans.factory.config.ServiceLocatorFactoryBean"
+		id="factoryHandler">
+		<property name="serviceLocatorInterface" value="app.truecaller.handle.FactoryHandler">
+		</property>
+	</bean>
+	<context:component-scan
+		base-package="app.truecaller.handle, app.truecaller.services" />
+
+
+  <!-- <task:scheduled-tasks>
+	<task:scheduled ref="jobHandler" method="run" cron="0 01 0 ? * *" />
+  </task:scheduled-tasks> -->
+
+
+
+</beans>
